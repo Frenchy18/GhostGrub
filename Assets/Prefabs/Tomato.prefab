@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -7275083884360912005}
   - component: {fileID: 2879277500330991903}
   - component: {fileID: 6903769948326212924}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Tomato
   m_TagString: Untagged
   m_Icon: {fileID: 0}

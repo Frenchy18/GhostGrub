@@ -16,7 +16,8 @@ GameObject:
   - component: {fileID: 2328541957623721481}
   - component: {fileID: 5501003161287130027}
   - component: {fileID: -6527529685115006259}
-  m_Layer: 0
+  - component: {fileID: -3974453920361111720}
+  m_Layer: 8
   m_Name: Bacon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -228,3 +229,20 @@ MonoBehaviour:
   _movementProvider: {fileID: 0}
   _handAligment: 1
   _handGrabPoses: []
+--- !u!114 &-3974453920361111720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673515248580430774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7aacff8a36c58f78b923dcdee8a1061, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IngredientItem
+  ingredientType: 1
+  rb: {fileID: 1611124645002990382}
+  disableWhenPlaced:
+  - {fileID: 2328541957623721481}
+  - {fileID: 5501003161287130027}

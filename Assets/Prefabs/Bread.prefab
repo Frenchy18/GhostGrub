@@ -16,7 +16,8 @@ GameObject:
   - component: {fileID: 8560095308990276582}
   - component: {fileID: 3553581822784602695}
   - component: {fileID: 3474432337109559293}
-  m_Layer: 0
+  - component: {fileID: -2781447881451574951}
+  m_Layer: 8
   m_Name: Bread
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -228,3 +229,20 @@ MonoBehaviour:
   _movementProvider: {fileID: 0}
   _handAligment: 1
   _handGrabPoses: []
+--- !u!114 &-2781447881451574951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8657451443949659460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7aacff8a36c58f78b923dcdee8a1061, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IngredientItem
+  ingredientType: 0
+  rb: {fileID: 6529797737629482192}
+  disableWhenPlaced:
+  - {fileID: 8560095308990276582}
+  - {fileID: 3553581822784602695}
