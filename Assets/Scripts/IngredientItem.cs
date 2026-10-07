@@ -16,14 +16,16 @@ public class IngredientItem : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void PlaceAt(Transform snapPoint)
+    public void PlaceAt(
+        Vector3 position,
+        Quaternion rotation,
+        Transform parent)
     {
-        if (IsPlaced || snapPoint == null)
+        if (IsPlaced)
             return;
 
         IsPlaced = true;
 
-        // Stop grab/interact components.
         foreach (Behaviour behaviour in disableWhenPlaced)
         {
             if (behaviour != null)
@@ -40,10 +42,11 @@ public class IngredientItem : MonoBehaviour
         }
 
         transform.SetPositionAndRotation(
-            snapPoint.position,
-            snapPoint.rotation
+            position,
+            rotation
         );
 
-        transform.SetParent(snapPoint, true);
+        if (parent != null)
+            transform.SetParent(parent, true);
     }
 }

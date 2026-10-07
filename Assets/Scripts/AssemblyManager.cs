@@ -1,84 +1,93 @@
-using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class AssemblyManager : MonoBehaviour
 {
-    [Serializable]
-    public class AssemblyStep
-    {
-        public IngredientType requiredIngredient;
+    [Header("Stack")]
+    [SerializeField] private Transform stackRoot;
+    [SerializeField] private Transform snapPoint;
 
-        [Tooltip("Exact position/rotation for this ingredient.")]
-        public Transform snapPoint;
+    [SerializeField] private BoxCollider assemblyTrigger;
 
-        [Tooltip("Ghost/outline showing where this ingredient belongs.")]
-        public GameObject ghostVisual;
-    }
+    [Header("Spacing")]
+    [SerializeField] private float extraSpacing = 0.005f;
 
-    [Header("Recipe")]
-    [SerializeField] private AssemblyStep[] steps;
-
-    [Header("Events")]
-    [SerializeField] private UnityEvent onAssemblyComplete;
-
-    private int currentStep = 0;
+    private float currentTopY;
 
     private void Start()
     {
-        RefreshGhosts();
+        if (snapPoint != null)
+            currentTopY = snapPoint.position.y;
+
+            UpdateTriggerPosition();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (currentStep >= steps.Length)
+        Rigidbody rb = other.attachedRigidbody;
+
+        if (rb == null)
             return;
 
-        IngredientItem ingredient = null;
-
-        if (other.attachedRigidbody != null)
-        {
-            ingredient =
-                other.attachedRigidbody.GetComponent<IngredientItem>();
-        }
-
-        if (ingredient == null)
-        {
-            ingredient =
-                other.GetComponentInParent<IngredientItem>();
-        }
+        IngredientItem ingredient =
+            rb.GetComponent<IngredientItem>();
 
         if (ingredient == null || ingredient.IsPlaced)
             return;
 
-        AssemblyStep step = steps[currentStep];
-
-        // Wrong ingredient.
-        if (ingredient.Type != step.requiredIngredient)
-            return;
-
-        // Correct ingredient.
-        ingredient.PlaceAt(step.snapPoint);
-
-        currentStep++;
-
-        RefreshGhosts();
-
-        if (currentStep >= steps.Length)
-        {
-            Debug.Log("Assembly complete!");
-            onAssemblyComplete?.Invoke();
-        }
+        AddToStack(ingredient);
     }
 
-    private void RefreshGhosts()
+    private void AddToStack(IngredientItem ingredient)
     {
-        for (int i = 0; i < steps.Length; i++)
-        {
-            if (steps[i].ghostVisual != null)
-            {
-                steps[i].ghostVisual.SetActive(i == currentStep);
-            }
-        }
+        Collider ingredientCollider =
+            ingredient.GetComponentInChildren<Collider>();
+
+        if (ingredientCollider == null)
+            return;
+
+        // Get the object's approximate vertical thickness.
+        float halfHeight = ingredientCollider.bounds.extents.y;
+
+        Vector3 targetPosition = snapPoint.position;
+
+        targetPosition.y =
+            currentTopY + halfHeight;
+
+        ingredient.PlaceAt(
+            targetPosition,
+            snapPoint.rotation,
+            stackRoot
+        );
+
+        // Recalculate after snapping.
+        ingredientCollider =
+            ingredient.GetComponentInChildren<Collider>();
+
+        currentTopY =
+            ingredientCollider.bounds.max.y + extraSpacing;
+
+        // Move the visual/trigger snap point to the top.
+        Vector3 newSnapPosition = snapPoint.position;
+        newSnapPosition.y = currentTopY;
+        snapPoint.position = newSnapPosition;
+
+        UpdateTriggerPosition();
+    }
+
+    private void UpdateTriggerPosition()
+    {
+        if (assemblyTrigger == null || snapPoint == null)
+            return;
+
+        Vector3 localSnapPosition =
+            transform.InverseTransformPoint(snapPoint.position);
+
+        Vector3 center = assemblyTrigger.center;
+
+        center.x = localSnapPosition.x;
+        center.y = localSnapPosition.y;
+        center.z = localSnapPosition.z;
+
+        assemblyTrigger.center = center;
     }
 }
