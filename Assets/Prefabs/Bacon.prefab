@@ -113,8 +113,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.17849794, y: 0.01, z: 0.19622813}
-  m_Center: {x: 0, y: -0.005, z: -0.000000037252907}
+  m_Size: {x: 0.17849794, y: 0.03322363, z: 0.19622813}
+  m_Center: {x: -7.120757e-17, y: -0.004524708, z: -0.0000000372529}
 --- !u!54 &1611124645002990382
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -123,7 +123,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 673515248580430774}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 2
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -184,6 +184,6 @@ MonoBehaviour:
   _pointableElement: {fileID: 0}
   _rigidbody: {fileID: 1611124645002990382}
   _grabSource: {fileID: 0}
-  _useClosestPointAsGrabSource: 0
+  _useClosestPointAsGrabSource: 1
   _releaseDistance: 0
   _resetGrabOnGrabsUpdated: 1
