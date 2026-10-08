@@ -14,11 +14,30 @@ public class IngredientItem : MonoBehaviour
     public IngredientType Type => ingredientType;
     public bool IsPlaced { get; private set; }
     public float StackHeight => stackHeight;
+    private AssemblyManager assemblyManager;
 
     private void Awake()
     {
         if (rb == null)
+        {
             rb = GetComponent<Rigidbody>();
+        }
+
+        assemblyManager =
+            FindFirstObjectByType<AssemblyManager>();
+    }
+
+    public void NotifyGrabbed()
+    {
+        if (IsPlaced)
+            return;
+
+        assemblyManager?.IngredientGrabbed(this);
+    }
+
+    public void NotifyReleased()
+    {
+        assemblyManager?.IngredientReleased(this);
     }
 
     private void Reset()
