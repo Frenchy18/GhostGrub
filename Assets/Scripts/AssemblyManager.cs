@@ -16,6 +16,12 @@ public class AssemblyManager : MonoBehaviour
     [SerializeField] private Renderer ghostRenderer;
     [SerializeField] private float ghostFadeDuration = 0.12f;
 
+    [Header("Sandwich Pickup")]
+    [SerializeField] private Rigidbody sandwichRigidbody;
+    [SerializeField] private BoxCollider sandwichCollider;
+    [SerializeField] private Behaviour[] sandwichGrabBehaviours;
+    [SerializeField] private float sandwichColliderPaddingY = 0.01f;
+
     private float currentTopY;
     private int ingredientCount = 0;
 
@@ -28,19 +34,43 @@ public class AssemblyManager : MonoBehaviour
 
     private int ghostColorProperty = -1;
 
+    private Transform stackOriginalParent;
+    private Vector3 stackOriginalLocalPosition;
+    private Quaternion stackOriginalLocalRotation;
+    private Vector3 stackOriginalLocalScale;
+    private Vector3 snapOriginalLocalPosition;
+    private Vector3 stackBaseWorldPosition;
+
+    private bool sandwichTaken;
+    private IngredientType lastIngredientType;
+
     private void Start()
     {
+        if (stackRoot != null)
+        {
+            stackOriginalParent = stackRoot.parent;
+            stackOriginalLocalPosition = stackRoot.localPosition;
+            stackOriginalLocalRotation = stackRoot.localRotation;
+            stackOriginalLocalScale = stackRoot.localScale;
+        }
+
         if (snapPoint != null)
         {
+            snapOriginalLocalPosition = snapPoint.localPosition;
+            stackBaseWorldPosition = snapPoint.position;
             currentTopY = snapPoint.position.y;
         }
 
+        SetSandwichPickupAvailable(false);
         UpdateTriggerPosition();
         SetupGhost();
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        if (sandwichTaken)
+            return;
+
         Rigidbody rb = other.attachedRigidbody;
 
         if (rb == null)
@@ -92,6 +122,7 @@ public class AssemblyManager : MonoBehaviour
         );
 
         ingredientCount++;
+        lastIngredientType = ingredient.Type;
 
         // Move directly to the top of the placed ingredient.
         currentTopY += height + extraSpacing;
@@ -100,6 +131,15 @@ public class AssemblyManager : MonoBehaviour
         newSnapPosition.y = currentTopY;
 
         snapPoint.position = newSnapPosition;
+
+        UpdateSandwichCollider();
+
+        // As soon as the first bread exists, the sandwich can be picked up.
+        // There is no minimum layer count and no "completion" requirement.
+        if (ingredientCount == 1)
+        {
+            SetSandwichPickupAvailable(true);
+        }
 
         UpdateTriggerPosition();
         RefreshGhostVisibility();
@@ -286,6 +326,161 @@ public class AssemblyManager : MonoBehaviour
         }
 
         ghostFadeRoutine = null;
+    }
+
+
+    public bool IsClosedSandwich =>
+        ingredientCount > 1 &&
+        lastIngredientType == IngredientType.Bread;
+
+    public void SandwichGrabbed()
+    {
+        if (ingredientCount == 0 || sandwichTaken)
+            return;
+
+        sandwichTaken = true;
+
+        heldIngredients.Clear();
+        SetGhostVisible(false);
+
+        if (assemblyTrigger != null)
+            assemblyTrigger.enabled = false;
+
+        // AssemblyArea is non-uniformly scaled in the current scene.
+        // Detach the movable sandwich so physics/grabbing is not performed
+        // under that scaled parent.
+        if (stackRoot != null)
+            stackRoot.SetParent(null, true);
+
+        if (sandwichRigidbody != null)
+        {
+            sandwichRigidbody.linearVelocity = Vector3.zero;
+            sandwichRigidbody.angularVelocity = Vector3.zero;
+            sandwichRigidbody.useGravity = false;
+            sandwichRigidbody.isKinematic = true;
+        }
+    }
+
+    public void SandwichReleased()
+    {
+        if (!sandwichTaken || sandwichRigidbody == null)
+            return;
+
+        // Once the sandwich leaves the board, it becomes a normal physics
+        // object so it can be dropped into the trash.
+        sandwichRigidbody.isKinematic = false;
+        sandwichRigidbody.useGravity = true;
+    }
+
+    public bool IsCurrentSandwich(Collider other)
+    {
+        return other != null &&
+               sandwichRigidbody != null &&
+               other.attachedRigidbody == sandwichRigidbody;
+    }
+
+    public void DiscardCurrentSandwich()
+    {
+        if (stackRoot == null || ingredientCount == 0)
+            return;
+
+        IngredientItem[] ingredients =
+            stackRoot.GetComponentsInChildren<IngredientItem>(true);
+
+        foreach (IngredientItem ingredient in ingredients)
+        {
+            if (ingredient != null)
+                Destroy(ingredient.gameObject);
+        }
+
+        if (sandwichRigidbody != null)
+        {
+            sandwichRigidbody.linearVelocity = Vector3.zero;
+            sandwichRigidbody.angularVelocity = Vector3.zero;
+            sandwichRigidbody.useGravity = false;
+            sandwichRigidbody.isKinematic = true;
+        }
+
+        stackRoot.SetParent(stackOriginalParent, false);
+        stackRoot.localPosition = stackOriginalLocalPosition;
+        stackRoot.localRotation = stackOriginalLocalRotation;
+        stackRoot.localScale = stackOriginalLocalScale;
+
+        if (snapPoint != null)
+        {
+            snapPoint.localPosition = snapOriginalLocalPosition;
+            stackBaseWorldPosition = snapPoint.position;
+            currentTopY = snapPoint.position.y;
+        }
+
+        ingredientCount = 0;
+        sandwichTaken = false;
+        heldIngredients.Clear();
+
+        SetSandwichPickupAvailable(false);
+
+        if (assemblyTrigger != null)
+            assemblyTrigger.enabled = true;
+
+        UpdateTriggerPosition();
+        RefreshGhostVisibility();
+    }
+
+    private void SetSandwichPickupAvailable(bool available)
+    {
+        if (sandwichCollider != null)
+            sandwichCollider.enabled = available;
+
+        if (sandwichRigidbody != null)
+        {
+            sandwichRigidbody.linearVelocity = Vector3.zero;
+            sandwichRigidbody.angularVelocity = Vector3.zero;
+            sandwichRigidbody.useGravity = false;
+            sandwichRigidbody.isKinematic = true;
+        }
+
+        if (sandwichGrabBehaviours == null)
+            return;
+
+        foreach (Behaviour behaviour in sandwichGrabBehaviours)
+        {
+            if (behaviour != null)
+                behaviour.enabled = available;
+        }
+    }
+
+    private void UpdateSandwichCollider()
+    {
+        if (stackRoot == null ||
+            sandwichCollider == null ||
+            snapPoint == null)
+        {
+            return;
+        }
+
+        Vector3 topWorldPosition = stackBaseWorldPosition;
+        topWorldPosition.y =
+            Mathf.Max(stackBaseWorldPosition.y, currentTopY - extraSpacing);
+
+        Vector3 localBottom =
+            stackRoot.InverseTransformPoint(stackBaseWorldPosition);
+
+        Vector3 localTop =
+            stackRoot.InverseTransformPoint(topWorldPosition);
+
+        float minY = Mathf.Min(localBottom.y, localTop.y);
+        float maxY = Mathf.Max(localBottom.y, localTop.y);
+
+        Vector3 center = sandwichCollider.center;
+        center.y = (minY + maxY) * 0.5f;
+        sandwichCollider.center = center;
+
+        Vector3 size = sandwichCollider.size;
+        size.y = Mathf.Max(
+            0.01f,
+            (maxY - minY) + sandwichColliderPaddingY
+        );
+        sandwichCollider.size = size;
     }
 
     private void UpdateTriggerPosition()

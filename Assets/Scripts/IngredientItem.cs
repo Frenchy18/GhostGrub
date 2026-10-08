@@ -60,6 +60,18 @@ public class IngredientItem : MonoBehaviour
 
         if (parent != null)
             transform.SetParent(parent, true);
+
+        Collider[] colliders =
+            GetComponentsInChildren<Collider>(true);
+
+        foreach (Collider itemCollider in colliders)
+        {
+            if (itemCollider != null)
+                itemCollider.enabled = false;
+        }
+
+        if (rb != null)
+            rb.detectCollisions = false;
     }
 
     public void NotifyGrabbed()
