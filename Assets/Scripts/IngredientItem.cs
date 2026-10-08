@@ -5,11 +5,21 @@ public class IngredientItem : MonoBehaviour
     [SerializeField] private IngredientType ingredientType;
     [SerializeField] private Rigidbody rb;
 
+    [Header("Assembly")]
+    [SerializeField] private float stackHeight = 0.015f;
+
     [Header("Disable After Placement")]
     [SerializeField] private Behaviour[] disableWhenPlaced;
 
     public IngredientType Type => ingredientType;
     public bool IsPlaced { get; private set; }
+    public float StackHeight => stackHeight;
+
+    private void Awake()
+    {
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+    }
 
     private void Reset()
     {
@@ -36,15 +46,11 @@ public class IngredientItem : MonoBehaviour
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-
             rb.useGravity = false;
             rb.isKinematic = true;
         }
 
-        transform.SetPositionAndRotation(
-            position,
-            rotation
-        );
+        transform.SetPositionAndRotation(position, rotation);
 
         if (parent != null)
             transform.SetParent(parent, true);

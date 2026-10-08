@@ -5,20 +5,22 @@ public class AssemblyManager : MonoBehaviour
     [Header("Stack")]
     [SerializeField] private Transform stackRoot;
     [SerializeField] private Transform snapPoint;
-
     [SerializeField] private BoxCollider assemblyTrigger;
 
     [Header("Spacing")]
-    [SerializeField] private float extraSpacing = 0.005f;
+    [SerializeField] private float extraSpacing = 0.001f;
 
     private float currentTopY;
+    private int ingredientCount = 0;
 
     private void Start()
     {
         if (snapPoint != null)
+        {
             currentTopY = snapPoint.position.y;
+        }
 
-            UpdateTriggerPosition();
+        UpdateTriggerPosition();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -34,22 +36,35 @@ public class AssemblyManager : MonoBehaviour
         if (ingredient == null || ingredient.IsPlaced)
             return;
 
+        // The first ingredient must be bread.
+        if (ingredientCount == 0 &&
+            ingredient.Type != IngredientType.Bread)
+        {
+            return;
+        }
+
         AddToStack(ingredient);
     }
 
     private void AddToStack(IngredientItem ingredient)
     {
-        Collider ingredientCollider =
-            ingredient.GetComponentInChildren<Collider>();
+        float height = ingredient.StackHeight;
 
-        if (ingredientCollider == null)
+        if (height <= 0f)
+        {
+            Debug.LogWarning(
+                $"{ingredient.name} has an invalid StackHeight."
+            );
+
             return;
+        }
 
-        // Get the object's approximate vertical thickness.
-        float halfHeight = ingredientCollider.bounds.extents.y;
+        float halfHeight = height * 0.5f;
 
         Vector3 targetPosition = snapPoint.position;
 
+        // Position the ingredient so its bottom rests
+        // directly on the current top of the sandwich.
         targetPosition.y =
             currentTopY + halfHeight;
 
@@ -59,16 +74,15 @@ public class AssemblyManager : MonoBehaviour
             stackRoot
         );
 
-        // Recalculate after snapping.
-        ingredientCollider =
-            ingredient.GetComponentInChildren<Collider>();
+        ingredientCount++;
 
-        currentTopY =
-            ingredientCollider.bounds.max.y + extraSpacing;
+        // New top of the sandwich.
+        currentTopY += height + extraSpacing;
 
-        // Move the visual/trigger snap point to the top.
+        // Move the placement indicator upward.
         Vector3 newSnapPosition = snapPoint.position;
         newSnapPosition.y = currentTopY;
+
         snapPoint.position = newSnapPosition;
 
         UpdateTriggerPosition();
@@ -80,7 +94,9 @@ public class AssemblyManager : MonoBehaviour
             return;
 
         Vector3 localSnapPosition =
-            transform.InverseTransformPoint(snapPoint.position);
+            transform.InverseTransformPoint(
+                snapPoint.position
+            );
 
         Vector3 center = assemblyTrigger.center;
 
