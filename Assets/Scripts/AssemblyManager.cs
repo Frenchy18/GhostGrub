@@ -19,7 +19,6 @@ public class AssemblyManager : MonoBehaviour
     [Header("Sandwich Pickup")]
     [SerializeField] private Rigidbody sandwichRigidbody;
     [SerializeField] private BoxCollider sandwichCollider;
-    [SerializeField] private Behaviour[] sandwichGrabBehaviours;
     [SerializeField] private float sandwichColliderPaddingY = 0.01f;
 
     private float currentTopY;
@@ -61,7 +60,7 @@ public class AssemblyManager : MonoBehaviour
             currentTopY = snapPoint.position.y;
         }
 
-        SetSandwichPickupAvailable(false);
+        SetSandwichPhysicsAvailable(false);
         UpdateTriggerPosition();
         SetupGhost();
     }
@@ -134,11 +133,11 @@ public class AssemblyManager : MonoBehaviour
 
         UpdateSandwichCollider();
 
-        // As soon as the first bread exists, the sandwich can be picked up.
-        // There is no minimum layer count and no "completion" requirement.
+        // The whole sandwich becomes eligible for trigger pickup as soon
+        // as the first bread is placed.
         if (ingredientCount == 1)
         {
-            SetSandwichPickupAvailable(true);
+            SetSandwichPhysicsAvailable(true);
         }
 
         UpdateTriggerPosition();
@@ -333,10 +332,34 @@ public class AssemblyManager : MonoBehaviour
         ingredientCount > 1 &&
         lastIngredientType == IngredientType.Bread;
 
-    public void SandwichGrabbed()
+    public bool CanTakeSandwich =>
+        ingredientCount > 0 && !sandwichTaken;
+
+    public bool IsSandwichTaken => sandwichTaken;
+
+    public bool HasSandwich => ingredientCount > 0;
+
+    public Vector3 SandwichPickupPosition
     {
-        if (ingredientCount == 0 || sandwichTaken)
-            return;
+        get
+        {
+            if (sandwichCollider != null && sandwichCollider.enabled)
+                return sandwichCollider.bounds.center;
+
+            return stackRoot != null
+                ? stackRoot.position
+                : transform.position;
+        }
+    }
+
+    public bool TryTakeSandwich(Transform controllerAnchor)
+    {
+        if (!CanTakeSandwich ||
+            controllerAnchor == null ||
+            stackRoot == null)
+        {
+            return false;
+        }
 
         sandwichTaken = true;
 
@@ -346,11 +369,10 @@ public class AssemblyManager : MonoBehaviour
         if (assemblyTrigger != null)
             assemblyTrigger.enabled = false;
 
-        // AssemblyArea is non-uniformly scaled in the current scene.
-        // Detach the movable sandwich so physics/grabbing is not performed
-        // under that scaled parent.
-        if (stackRoot != null)
-            stackRoot.SetParent(null, true);
+        // Detach from the non-uniformly scaled assembly area first, then
+        // parent to the controller while preserving the current world pose.
+        stackRoot.SetParent(null, true);
+        stackRoot.SetParent(controllerAnchor, true);
 
         if (sandwichRigidbody != null)
         {
@@ -359,17 +381,28 @@ public class AssemblyManager : MonoBehaviour
             sandwichRigidbody.useGravity = false;
             sandwichRigidbody.isKinematic = true;
         }
+
+        return true;
     }
 
-    public void SandwichReleased()
+    public void ReleaseSandwich(
+        Vector3 linearVelocity,
+        Vector3 angularVelocity)
     {
-        if (!sandwichTaken || sandwichRigidbody == null)
+        if (!sandwichTaken || stackRoot == null)
             return;
 
-        // Once the sandwich leaves the board, it becomes a normal physics
-        // object so it can be dropped into the trash.
-        sandwichRigidbody.isKinematic = false;
-        sandwichRigidbody.useGravity = true;
+        stackRoot.SetParent(null, true);
+
+        if (sandwichRigidbody != null)
+        {
+            sandwichRigidbody.isKinematic = false;
+            sandwichRigidbody.useGravity = true;
+            sandwichRigidbody.linearVelocity = linearVelocity;
+            sandwichRigidbody.angularVelocity = angularVelocity;
+        }
+
+        sandwichTaken = false;
     }
 
     public bool IsCurrentSandwich(Collider other)
@@ -417,7 +450,7 @@ public class AssemblyManager : MonoBehaviour
         sandwichTaken = false;
         heldIngredients.Clear();
 
-        SetSandwichPickupAvailable(false);
+        SetSandwichPhysicsAvailable(false);
 
         if (assemblyTrigger != null)
             assemblyTrigger.enabled = true;
@@ -426,7 +459,7 @@ public class AssemblyManager : MonoBehaviour
         RefreshGhostVisibility();
     }
 
-    private void SetSandwichPickupAvailable(bool available)
+    private void SetSandwichPhysicsAvailable(bool available)
     {
         if (sandwichCollider != null)
             sandwichCollider.enabled = available;
@@ -437,15 +470,6 @@ public class AssemblyManager : MonoBehaviour
             sandwichRigidbody.angularVelocity = Vector3.zero;
             sandwichRigidbody.useGravity = false;
             sandwichRigidbody.isKinematic = true;
-        }
-
-        if (sandwichGrabBehaviours == null)
-            return;
-
-        foreach (Behaviour behaviour in sandwichGrabBehaviours)
-        {
-            if (behaviour != null)
-                behaviour.enabled = available;
         }
     }
 
