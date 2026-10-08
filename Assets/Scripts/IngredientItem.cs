@@ -41,6 +41,7 @@ public class IngredientItem : MonoBehaviour
 
         IsPlaced = true;
 
+        // Disable normal grab/interactable behaviour.
         foreach (Behaviour behaviour in disableWhenPlaced)
         {
             if (behaviour != null)
@@ -49,18 +50,28 @@ public class IngredientItem : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            // Meta may already have made this Rigidbody kinematic.
+            // Only assign velocity if Unity currently allows it.
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
             rb.useGravity = false;
             rb.isKinematic = true;
             rb.detectCollisions = false;
         }
 
-        transform.SetPositionAndRotation(position, rotation);
+        transform.SetPositionAndRotation(
+            position,
+            rotation
+        );
 
         if (parent != null)
             transform.SetParent(parent, true);
 
+        // The sandwich root collider handles collision from this point on.
         Collider[] colliders =
             GetComponentsInChildren<Collider>(true);
 
@@ -70,14 +81,9 @@ public class IngredientItem : MonoBehaviour
                 itemCollider.enabled = false;
         }
 
-        // Once an ingredient belongs to the sandwich, the sandwich root is
-        // the ONLY physics body. Nested ingredient Rigidbodies can fight a
-        // launched parent Rigidbody and make the stack separate.
-        if (rb != null)
-        {
-            Destroy(rb);
-            rb = null;
-        }
+        // IMPORTANT:
+        // Do NOT destroy the Rigidbody.
+        // Meta's RigidbodyKinematicLocker depends on it.
     }
 
     public void NotifyGrabbed()

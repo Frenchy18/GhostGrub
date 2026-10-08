@@ -34,8 +34,12 @@ public class SandwichObject : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
             rb.useGravity = false;
             rb.isKinematic = true;
         }

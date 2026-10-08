@@ -323,8 +323,12 @@ public class AssemblyManager : MonoBehaviour
 
         if (sandwichRigidbody != null)
         {
-            sandwichRigidbody.linearVelocity = Vector3.zero;
-            sandwichRigidbody.angularVelocity = Vector3.zero;
+            if (!sandwichRigidbody.isKinematic)
+            {
+                sandwichRigidbody.linearVelocity = Vector3.zero;
+                sandwichRigidbody.angularVelocity = Vector3.zero;
+            }
+
             sandwichRigidbody.useGravity = false;
             sandwichRigidbody.isKinematic = true;
         }
