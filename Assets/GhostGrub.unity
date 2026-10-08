@@ -5519,7 +5519,7 @@ Transform:
   m_GameObject: {fileID: 926794199}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.2, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -12635,7 +12635,7 @@ MonoBehaviour:
   stackRoot: {fileID: 1439278224}
   snapPoint: {fileID: 474553970}
   assemblyTrigger: {fileID: 1368959535}
-  extraSpacing: 0.005
+  extraSpacing: 0.01
   ghostRenderer: {fileID: 1029433225}
   ghostFadeDuration: 0.12
 --- !u!1001 &1369202886
