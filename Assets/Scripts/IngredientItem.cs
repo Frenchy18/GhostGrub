@@ -14,14 +14,13 @@ public class IngredientItem : MonoBehaviour
     public IngredientType Type => ingredientType;
     public bool IsPlaced { get; private set; }
     public float StackHeight => stackHeight;
+
     private AssemblyManager assemblyManager;
 
     private void Awake()
     {
         if (rb == null)
-        {
             rb = GetComponent<Rigidbody>();
-        }
 
         assemblyManager =
             FindFirstObjectByType<AssemblyManager>();
@@ -54,6 +53,7 @@ public class IngredientItem : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
             rb.useGravity = false;
             rb.isKinematic = true;
+            rb.detectCollisions = false;
         }
 
         transform.SetPositionAndRotation(position, rotation);
@@ -70,8 +70,14 @@ public class IngredientItem : MonoBehaviour
                 itemCollider.enabled = false;
         }
 
+        // Once an ingredient belongs to the sandwich, the sandwich root is
+        // the ONLY physics body. Nested ingredient Rigidbodies can fight a
+        // launched parent Rigidbody and make the stack separate.
         if (rb != null)
-            rb.detectCollisions = false;
+        {
+            Destroy(rb);
+            rb = null;
+        }
     }
 
     public void NotifyGrabbed()

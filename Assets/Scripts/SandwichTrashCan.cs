@@ -10,14 +10,13 @@ public class SandwichTrashCan : MonoBehaviour
         if (sandwich != null)
         {
             sandwich.Discard();
+            return;
         }
 
         IngredientItem ingredient =
             other.GetComponentInParent<IngredientItem>();
 
         if (ingredient != null)
-        {
             Destroy(ingredient.gameObject);
-        }
     }
 }

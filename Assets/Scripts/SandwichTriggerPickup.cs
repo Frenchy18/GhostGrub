@@ -22,26 +22,19 @@ public class SandwichTriggerPickup : MonoBehaviour
     [Header("Sandwich Launch")]
     [SerializeField] private float launchSpeed = 5f;
     [SerializeField] private float upwardBoost = 0.35f;
-    [SerializeField] private Vector3 localLaunchDirection = Vector3.forward;
+    [SerializeField] private Vector3 localLaunchDirection =
+        Vector3.forward;
 
     private bool holdingSandwich;
     private OVRInput.Controller activeController;
     private Transform activeAnchor;
     private SandwichObject heldSandwich;
 
-    private Vector3 previousAnchorPosition;
-    private Quaternion previousAnchorRotation;
-
-    private Vector3 releaseLinearVelocity;
-    private Vector3 releaseAngularVelocity;
-
     private void Update()
     {
         if (assemblyManager == null)
             return;
 
-        // If the held sandwich was destroyed (for example by a trash
-        // trigger), immediately clear this input state.
         if (holdingSandwich && heldSandwich == null)
         {
             ClearHoldState();
@@ -50,8 +43,6 @@ public class SandwichTriggerPickup : MonoBehaviour
 
         if (holdingSandwich)
         {
-            UpdateThrowVelocity();
-
             float triggerValue =
                 OVRInput.Get(
                     OVRInput.Axis1D.PrimaryIndexTrigger,
@@ -65,14 +56,13 @@ public class SandwichTriggerPickup : MonoBehaviour
                         localLaunchDirection.normalized
                     );
 
-                Vector3 launchedVelocity =
-                    releaseLinearVelocity +
+                Vector3 launchVelocity =
                     launchDirection * launchSpeed +
                     Vector3.up * upwardBoost;
 
                 heldSandwich.Launch(
-                    launchedVelocity,
-                    releaseAngularVelocity
+                    launchVelocity,
+                    Vector3.zero
                 );
 
                 ClearHoldState();
@@ -110,19 +100,21 @@ public class SandwichTriggerPickup : MonoBehaviour
         Vector3 sandwichPosition =
             assemblyManager.SandwichPickupPosition;
 
-        float leftDistance = leftPressed
-            ? Vector3.Distance(
-                leftControllerAnchor.position,
-                sandwichPosition
-            )
-            : float.PositiveInfinity;
+        float leftDistance =
+            leftPressed
+                ? Vector3.Distance(
+                    leftControllerAnchor.position,
+                    sandwichPosition
+                )
+                : float.PositiveInfinity;
 
-        float rightDistance = rightPressed
-            ? Vector3.Distance(
-                rightControllerAnchor.position,
-                sandwichPosition
-            )
-            : float.PositiveInfinity;
+        float rightDistance =
+            rightPressed
+                ? Vector3.Distance(
+                    rightControllerAnchor.position,
+                    sandwichPosition
+                )
+                : float.PositiveInfinity;
 
         if (leftDistance > pickupDistance &&
             rightDistance > pickupDistance)
@@ -166,54 +158,6 @@ public class SandwichTriggerPickup : MonoBehaviour
         holdingSandwich = true;
         activeAnchor = controllerAnchor;
         activeController = controller;
-
-        previousAnchorPosition = activeAnchor.position;
-        previousAnchorRotation = activeAnchor.rotation;
-
-        releaseLinearVelocity = Vector3.zero;
-        releaseAngularVelocity = Vector3.zero;
-    }
-
-    private void UpdateThrowVelocity()
-    {
-        if (activeAnchor == null || Time.deltaTime <= 0f)
-            return;
-
-        float dt = Time.deltaTime;
-
-        Vector3 currentPosition = activeAnchor.position;
-        Quaternion currentRotation = activeAnchor.rotation;
-
-        releaseLinearVelocity =
-            (currentPosition - previousAnchorPosition) / dt;
-
-        Quaternion delta =
-            currentRotation *
-            Quaternion.Inverse(previousAnchorRotation);
-
-        delta.ToAngleAxis(
-            out float angleDegrees,
-            out Vector3 axis
-        );
-
-        if (angleDegrees > 180f)
-            angleDegrees -= 360f;
-
-        if (axis.sqrMagnitude > 0.0001f)
-        {
-            releaseAngularVelocity =
-                axis.normalized *
-                angleDegrees *
-                Mathf.Deg2Rad /
-                dt;
-        }
-        else
-        {
-            releaseAngularVelocity = Vector3.zero;
-        }
-
-        previousAnchorPosition = currentPosition;
-        previousAnchorRotation = currentRotation;
     }
 
     private void ClearHoldState()
@@ -222,8 +166,5 @@ public class SandwichTriggerPickup : MonoBehaviour
         heldSandwich = null;
         activeAnchor = null;
         activeController = OVRInput.Controller.None;
-        releaseLinearVelocity = Vector3.zero;
-        releaseAngularVelocity = Vector3.zero;
     }
 }
-
