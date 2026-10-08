@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 4734237637269216281}
   - component: {fileID: -2813842129035818421}
   - component: {fileID: -932688010153973380}
+  - component: {fileID: -5795030794009267586}
   m_Layer: 8
   m_Name: Lettuce
   m_TagString: Untagged
@@ -241,7 +242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1464721f2283eb14e94a33e812b47be4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.InteractableUnityEventWrapper
-  _interactableView: {fileID: 0}
+  _interactableView: {fileID: 4734237637269216281}
   _whenHover:
     m_PersistentCalls:
       m_Calls: []
@@ -250,10 +251,34 @@ MonoBehaviour:
       m_Calls: []
   _whenSelect:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: -5795030794009267586}
+        m_TargetAssemblyTypeName: IngredientItem, Assembly-CSharp
+        m_MethodName: NotifyGrabbed
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   _whenUnselect:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: -5795030794009267586}
+        m_TargetAssemblyTypeName: IngredientItem, Assembly-CSharp
+        m_MethodName: NotifyReleased
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   _whenInteractorViewAdded:
     m_PersistentCalls:
       m_Calls: []
@@ -266,3 +291,21 @@ MonoBehaviour:
   _whenSelectingInteractorViewRemoved:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-5795030794009267586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1916080955254709834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7aacff8a36c58f78b923dcdee8a1061, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IngredientItem
+  ingredientType: 4
+  rb: {fileID: 627552403914718964}
+  stackHeight: 0.001
+  disableWhenPlaced:
+  - {fileID: 2870343669219952498}
+  - {fileID: 4734237637269216281}

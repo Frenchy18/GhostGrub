@@ -2,6 +2,7 @@ public enum IngredientType
 {
     Bread,
     Bacon,
+    Cheese,
     Chicken,
     Lettuce,
     Tomato,

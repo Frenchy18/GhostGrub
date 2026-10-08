@@ -27,19 +27,6 @@ public class IngredientItem : MonoBehaviour
             FindFirstObjectByType<AssemblyManager>();
     }
 
-    public void NotifyGrabbed()
-    {
-        if (IsPlaced)
-            return;
-
-        assemblyManager?.IngredientGrabbed(this);
-    }
-
-    public void NotifyReleased()
-    {
-        assemblyManager?.IngredientReleased(this);
-    }
-
     private void Reset()
     {
         rb = GetComponent<Rigidbody>();
@@ -73,5 +60,18 @@ public class IngredientItem : MonoBehaviour
 
         if (parent != null)
             transform.SetParent(parent, true);
+    }
+
+    public void NotifyGrabbed()
+    {
+        if (IsPlaced)
+            return;
+
+        assemblyManager?.IngredientGrabbed(this);
+    }
+
+    public void NotifyReleased()
+    {
+        assemblyManager?.IngredientReleased(this);
     }
 }
