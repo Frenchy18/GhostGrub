@@ -2,16 +2,22 @@ using UnityEngine;
 
 public class SandwichTrashCan : MonoBehaviour
 {
-    [SerializeField] private AssemblyManager assemblyManager;
-
     private void OnTriggerEnter(Collider other)
     {
-        if (assemblyManager == null)
-            return;
+        SandwichObject sandwich =
+            other.GetComponentInParent<SandwichObject>();
 
-        if (assemblyManager.IsCurrentSandwich(other))
+        if (sandwich != null)
         {
-            assemblyManager.DiscardCurrentSandwich();
+            sandwich.Discard();
+        }
+
+        IngredientItem ingredient =
+            other.GetComponentInParent<IngredientItem>();
+
+        if (ingredient != null)
+        {
+            Destroy(ingredient.gameObject);
         }
     }
 }

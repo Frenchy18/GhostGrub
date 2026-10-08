@@ -40,8 +40,22 @@ public class AssemblyManager : MonoBehaviour
     private Vector3 snapOriginalLocalPosition;
     private Vector3 stackBaseWorldPosition;
 
-    private bool sandwichTaken;
     private IngredientType lastIngredientType;
+
+    // Template values used to create a fresh empty StackRoot every time
+    // the player takes a sandwich away from the cutting board.
+    private string stackRootName;
+    private int stackRootLayer;
+
+    private Vector3 baseColliderCenter;
+    private Vector3 baseColliderSize;
+
+    private float baseRigidbodyMass;
+    private float baseLinearDamping;
+    private float baseAngularDamping;
+    private RigidbodyInterpolation baseInterpolation;
+    private CollisionDetectionMode baseCollisionDetection;
+    private RigidbodyConstraints baseConstraints;
 
     private void Start()
     {
@@ -51,6 +65,25 @@ public class AssemblyManager : MonoBehaviour
             stackOriginalLocalPosition = stackRoot.localPosition;
             stackOriginalLocalRotation = stackRoot.localRotation;
             stackOriginalLocalScale = stackRoot.localScale;
+
+            stackRootName = stackRoot.name;
+            stackRootLayer = stackRoot.gameObject.layer;
+        }
+
+        if (sandwichCollider != null)
+        {
+            baseColliderCenter = sandwichCollider.center;
+            baseColliderSize = sandwichCollider.size;
+        }
+
+        if (sandwichRigidbody != null)
+        {
+            baseRigidbodyMass = sandwichRigidbody.mass;
+            baseLinearDamping = sandwichRigidbody.linearDamping;
+            baseAngularDamping = sandwichRigidbody.angularDamping;
+            baseInterpolation = sandwichRigidbody.interpolation;
+            baseCollisionDetection = sandwichRigidbody.collisionDetectionMode;
+            baseConstraints = sandwichRigidbody.constraints;
         }
 
         if (snapPoint != null)
@@ -67,9 +100,6 @@ public class AssemblyManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (sandwichTaken)
-            return;
-
         Rigidbody rb = other.attachedRigidbody;
 
         if (rb == null)
@@ -333,11 +363,10 @@ public class AssemblyManager : MonoBehaviour
         lastIngredientType == IngredientType.Bread;
 
     public bool CanTakeSandwich =>
-        ingredientCount > 0 && !sandwichTaken;
+        ingredientCount > 0;
 
-    public bool IsSandwichTaken => sandwichTaken;
-
-    public bool HasSandwich => ingredientCount > 0;
+    public bool HasSandwich =>
+        ingredientCount > 0;
 
     public Vector3 SandwichPickupPosition
     {
@@ -352,92 +381,105 @@ public class AssemblyManager : MonoBehaviour
         }
     }
 
-    public bool TryTakeSandwich(Transform controllerAnchor)
+    public bool TryTakeSandwich(
+        Transform controllerAnchor,
+        Vector3 holdLocalPosition,
+        Quaternion holdLocalRotation,
+        out SandwichObject takenSandwich)
     {
+        takenSandwich = null;
+
         if (!CanTakeSandwich ||
             controllerAnchor == null ||
-            stackRoot == null)
+            stackRoot == null ||
+            sandwichRigidbody == null)
         {
             return false;
         }
 
-        sandwichTaken = true;
-
         heldIngredients.Clear();
         SetGhostVisible(false);
 
-        if (assemblyTrigger != null)
-            assemblyTrigger.enabled = false;
+        // This StackRoot becomes the sandwich that leaves the board.
+        GameObject takenObject = stackRoot.gameObject;
+        takenObject.name = "Sandwich";
 
-        // Detach from the non-uniformly scaled assembly area first, then
-        // parent to the controller while preserving the current world pose.
-        stackRoot.SetParent(null, true);
-        stackRoot.SetParent(controllerAnchor, true);
+        SandwichObject sandwichObject =
+            takenObject.GetComponent<SandwichObject>();
 
-        if (sandwichRigidbody != null)
-        {
-            sandwichRigidbody.linearVelocity = Vector3.zero;
-            sandwichRigidbody.angularVelocity = Vector3.zero;
-            sandwichRigidbody.useGravity = false;
-            sandwichRigidbody.isKinematic = true;
-        }
+        if (sandwichObject == null)
+            sandwichObject = takenObject.AddComponent<SandwichObject>();
+
+        sandwichObject.Initialize(sandwichRigidbody);
+
+        // Snap the sandwich to a predictable position near the controller
+        // instead of preserving its old cutting-board offset.
+        sandwichObject.AttachTo(
+            controllerAnchor,
+            holdLocalPosition,
+            holdLocalRotation
+        );
+
+        takenSandwich = sandwichObject;
+
+        // Immediately give the cutting board a brand-new empty StackRoot.
+        CreateFreshStackRoot();
+        ResetAssemblyForNextSandwich();
 
         return true;
     }
 
-    public void ReleaseSandwich(
-        Vector3 linearVelocity,
-        Vector3 angularVelocity)
+    private void CreateFreshStackRoot()
     {
-        if (!sandwichTaken || stackRoot == null)
-            return;
+        GameObject freshRoot =
+            new GameObject(
+                string.IsNullOrEmpty(stackRootName)
+                    ? "StackRoot"
+                    : stackRootName
+            );
 
-        stackRoot.SetParent(null, true);
+        freshRoot.layer = stackRootLayer;
 
-        if (sandwichRigidbody != null)
-        {
-            sandwichRigidbody.isKinematic = false;
-            sandwichRigidbody.useGravity = true;
-            sandwichRigidbody.linearVelocity = linearVelocity;
-            sandwichRigidbody.angularVelocity = angularVelocity;
-        }
+        Transform freshTransform = freshRoot.transform;
+        freshTransform.SetParent(stackOriginalParent, false);
+        freshTransform.localPosition = stackOriginalLocalPosition;
+        freshTransform.localRotation = stackOriginalLocalRotation;
+        freshTransform.localScale = stackOriginalLocalScale;
 
-        sandwichTaken = false;
+        Rigidbody freshRigidbody =
+            freshRoot.AddComponent<Rigidbody>();
+
+        freshRigidbody.mass =
+            baseRigidbodyMass > 0f
+                ? baseRigidbodyMass
+                : 0.25f;
+
+        freshRigidbody.linearDamping = baseLinearDamping;
+        freshRigidbody.angularDamping = baseAngularDamping;
+        freshRigidbody.interpolation = baseInterpolation;
+        freshRigidbody.collisionDetectionMode = baseCollisionDetection;
+        freshRigidbody.constraints = baseConstraints;
+        freshRigidbody.useGravity = false;
+        freshRigidbody.isKinematic = true;
+
+        BoxCollider freshCollider =
+            freshRoot.AddComponent<BoxCollider>();
+
+        freshCollider.center = baseColliderCenter;
+        freshCollider.size = baseColliderSize;
+        freshCollider.isTrigger = false;
+        freshCollider.enabled = false;
+
+        stackRoot = freshTransform;
+        sandwichRigidbody = freshRigidbody;
+        sandwichCollider = freshCollider;
     }
 
-    public bool IsCurrentSandwich(Collider other)
+    private void ResetAssemblyForNextSandwich()
     {
-        return other != null &&
-               sandwichRigidbody != null &&
-               other.attachedRigidbody == sandwichRigidbody;
-    }
-
-    public void DiscardCurrentSandwich()
-    {
-        if (stackRoot == null || ingredientCount == 0)
-            return;
-
-        IngredientItem[] ingredients =
-            stackRoot.GetComponentsInChildren<IngredientItem>(true);
-
-        foreach (IngredientItem ingredient in ingredients)
-        {
-            if (ingredient != null)
-                Destroy(ingredient.gameObject);
-        }
-
-        if (sandwichRigidbody != null)
-        {
-            sandwichRigidbody.linearVelocity = Vector3.zero;
-            sandwichRigidbody.angularVelocity = Vector3.zero;
-            sandwichRigidbody.useGravity = false;
-            sandwichRigidbody.isKinematic = true;
-        }
-
-        stackRoot.SetParent(stackOriginalParent, false);
-        stackRoot.localPosition = stackOriginalLocalPosition;
-        stackRoot.localRotation = stackOriginalLocalRotation;
-        stackRoot.localScale = stackOriginalLocalScale;
+        ingredientCount = 0;
+        lastIngredientType = default;
+        heldIngredients.Clear();
 
         if (snapPoint != null)
         {
@@ -445,10 +487,6 @@ public class AssemblyManager : MonoBehaviour
             stackBaseWorldPosition = snapPoint.position;
             currentTopY = snapPoint.position.y;
         }
-
-        ingredientCount = 0;
-        sandwichTaken = false;
-        heldIngredients.Clear();
 
         SetSandwichPhysicsAvailable(false);
 

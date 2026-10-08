@@ -12,6 +12,13 @@ public class SandwichTriggerPickup : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float pressThreshold = 0.75f;
     [SerializeField, Range(0f, 1f)] private float releaseThreshold = 0.20f;
 
+    [Header("Hold Position")]
+    [SerializeField] private Vector3 holdLocalPosition =
+        new Vector3(0f, 0f, 0.08f);
+
+    [SerializeField] private Vector3 holdLocalEulerAngles =
+        Vector3.zero;
+
     [Header("Sandwich Launch")]
     [SerializeField] private float launchSpeed = 5f;
     [SerializeField] private float upwardBoost = 0.35f;
@@ -20,6 +27,7 @@ public class SandwichTriggerPickup : MonoBehaviour
     private bool holdingSandwich;
     private OVRInput.Controller activeController;
     private Transform activeAnchor;
+    private SandwichObject heldSandwich;
 
     private Vector3 previousAnchorPosition;
     private Quaternion previousAnchorRotation;
@@ -32,9 +40,9 @@ public class SandwichTriggerPickup : MonoBehaviour
         if (assemblyManager == null)
             return;
 
-        // If the sandwich was destroyed/reset by the trash can while held,
-        // immediately clear this input state.
-        if (holdingSandwich && !assemblyManager.HasSandwich)
+        // If the held sandwich was destroyed (for example by a trash
+        // trigger), immediately clear this input state.
+        if (holdingSandwich && heldSandwich == null)
         {
             ClearHoldState();
             return;
@@ -62,7 +70,7 @@ public class SandwichTriggerPickup : MonoBehaviour
                     launchDirection * launchSpeed +
                     Vector3.up * upwardBoost;
 
-                assemblyManager.ReleaseSandwich(
+                heldSandwich.Launch(
                     launchedVelocity,
                     releaseAngularVelocity
                 );
@@ -142,9 +150,19 @@ public class SandwichTriggerPickup : MonoBehaviour
         Transform controllerAnchor,
         OVRInput.Controller controller)
     {
-        if (!assemblyManager.TryTakeSandwich(controllerAnchor))
-            return;
+        Quaternion holdRotation =
+            Quaternion.Euler(holdLocalEulerAngles);
 
+        if (!assemblyManager.TryTakeSandwich(
+                controllerAnchor,
+                holdLocalPosition,
+                holdRotation,
+                out SandwichObject sandwich))
+        {
+            return;
+        }
+
+        heldSandwich = sandwich;
         holdingSandwich = true;
         activeAnchor = controllerAnchor;
         activeController = controller;
@@ -201,6 +219,7 @@ public class SandwichTriggerPickup : MonoBehaviour
     private void ClearHoldState()
     {
         holdingSandwich = false;
+        heldSandwich = null;
         activeAnchor = null;
         activeController = OVRInput.Controller.None;
         releaseLinearVelocity = Vector3.zero;
