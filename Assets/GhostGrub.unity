@@ -14557,7 +14557,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SandwichStation
   sandwichPrefab: {fileID: -9213464465736242097, guid: 1789b38a4ecf80fdda3efc5014d4c350, type: 3}
   sandwichSpawnPoint: {fileID: 1942392384}
-  extraSpacing: 0.001
+  extraSpacing: 0.003
   ghostRoot: {fileID: 1029433222}
 --- !u!43 &1572633481
 Mesh:

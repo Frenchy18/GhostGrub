@@ -305,6 +305,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IngredientItem
   ingredientType: 7
   placedVisualPrefab: {fileID: 2184493553342543240, guid: 2e8a3915e7906a9bdb613289b557ae09, type: 3}
-  stackHeight: 0.015
+  stackHeight: 0.004
   placedLocalOffset: {x: 0, y: 0, z: 0}
   placedLocalEulerAngles: {x: 0, y: 0, z: 0}
