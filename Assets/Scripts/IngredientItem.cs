@@ -2,100 +2,58 @@ using UnityEngine;
 
 public class IngredientItem : MonoBehaviour
 {
+    [Header("Ingredient")]
     [SerializeField] private IngredientType ingredientType;
-    [SerializeField] private Rigidbody rb;
 
-    [Header("Assembly")]
+    [Header("Placed Version")]
+    [SerializeField] private GameObject placedVisualPrefab;
+
     [SerializeField] private float stackHeight = 0.015f;
 
-    [Header("Disable After Placement")]
-    [SerializeField] private Behaviour[] disableWhenPlaced;
+    [Header("Placed Visual Adjustment")]
+    [SerializeField] private Vector3 placedLocalOffset = Vector3.zero;
+    [SerializeField] private Vector3 placedLocalEulerAngles = Vector3.zero;
 
     public IngredientType Type => ingredientType;
-    public bool IsPlaced { get; private set; }
+    public GameObject PlacedVisualPrefab => placedVisualPrefab;
     public float StackHeight => stackHeight;
+    public Vector3 PlacedLocalOffset => placedLocalOffset;
+    public Vector3 PlacedLocalEulerAngles => placedLocalEulerAngles;
 
-    private AssemblyManager assemblyManager;
+    public bool IsConsumed { get; private set; }
+
+    private SandwichStation station;
 
     private void Awake()
     {
-        if (rb == null)
-            rb = GetComponent<Rigidbody>();
-
-        assemblyManager =
-            FindFirstObjectByType<AssemblyManager>();
+        station = FindFirstObjectByType<SandwichStation>();
     }
 
-    private void Reset()
+    public bool TryConsume()
     {
-        rb = GetComponent<Rigidbody>();
-    }
+        if (IsConsumed)
+            return false;
 
-    public void PlaceAt(
-        Vector3 position,
-        Quaternion rotation,
-        Transform parent)
-    {
-        if (IsPlaced)
-            return;
-
-        IsPlaced = true;
-
-        // Disable normal grab/interactable behaviour.
-        foreach (Behaviour behaviour in disableWhenPlaced)
-        {
-            if (behaviour != null)
-                behaviour.enabled = false;
-        }
-
-        if (rb != null)
-        {
-            // Meta may already have made this Rigidbody kinematic.
-            // Only assign velocity if Unity currently allows it.
-            if (!rb.isKinematic)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-
-            rb.useGravity = false;
-            rb.isKinematic = true;
-            rb.detectCollisions = false;
-        }
-
-        transform.SetPositionAndRotation(
-            position,
-            rotation
-        );
-
-        if (parent != null)
-            transform.SetParent(parent, true);
-
-        // The sandwich root collider handles collision from this point on.
-        Collider[] colliders =
-            GetComponentsInChildren<Collider>(true);
-
-        foreach (Collider itemCollider in colliders)
-        {
-            if (itemCollider != null)
-                itemCollider.enabled = false;
-        }
-
-        // IMPORTANT:
-        // Do NOT destroy the Rigidbody.
-        // Meta's RigidbodyKinematicLocker depends on it.
+        IsConsumed = true;
+        return true;
     }
 
     public void NotifyGrabbed()
     {
-        if (IsPlaced)
+        if (IsConsumed)
             return;
 
-        assemblyManager?.IngredientGrabbed(this);
+        if (station == null)
+            station = FindFirstObjectByType<SandwichStation>();
+
+        station?.IngredientGrabbed(this);
     }
 
     public void NotifyReleased()
     {
-        assemblyManager?.IngredientReleased(this);
+        if (station == null)
+            station = FindFirstObjectByType<SandwichStation>();
+
+        station?.IngredientReleased(this);
     }
 }

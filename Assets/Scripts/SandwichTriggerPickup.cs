@@ -3,14 +3,18 @@ using UnityEngine;
 public class SandwichTriggerPickup : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private AssemblyManager assemblyManager;
+    [SerializeField] private SandwichStation sandwichStation;
     [SerializeField] private Transform leftControllerAnchor;
     [SerializeField] private Transform rightControllerAnchor;
 
     [Header("Pickup")]
     [SerializeField] private float pickupDistance = 0.25f;
-    [SerializeField, Range(0f, 1f)] private float pressThreshold = 0.75f;
-    [SerializeField, Range(0f, 1f)] private float releaseThreshold = 0.20f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float pressThreshold = 0.75f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float releaseThreshold = 0.20f;
 
     [Header("Hold Position")]
     [SerializeField] private Vector3 holdLocalPosition =
@@ -19,59 +23,44 @@ public class SandwichTriggerPickup : MonoBehaviour
     [SerializeField] private Vector3 holdLocalEulerAngles =
         Vector3.zero;
 
-    [Header("Sandwich Launch")]
+    [Header("Launch")]
     [SerializeField] private float launchSpeed = 5f;
     [SerializeField] private float upwardBoost = 0.35f;
+
     [SerializeField] private Vector3 localLaunchDirection =
         Vector3.forward;
 
     private bool holdingSandwich;
+
     private OVRInput.Controller activeController;
     private Transform activeAnchor;
+
     private SandwichObject heldSandwich;
 
     private void Update()
     {
-        if (assemblyManager == null)
+        if (sandwichStation == null)
             return;
 
-        if (holdingSandwich && heldSandwich == null)
+        if (holdingSandwich &&
+            heldSandwich == null)
         {
-            ClearHoldState();
+            ClearHold();
             return;
         }
 
         if (holdingSandwich)
         {
-            float triggerValue =
-                OVRInput.Get(
-                    OVRInput.Axis1D.PrimaryIndexTrigger,
-                    activeController
-                );
-
-            if (triggerValue <= releaseThreshold)
-            {
-                Vector3 launchDirection =
-                    activeAnchor.TransformDirection(
-                        localLaunchDirection.normalized
-                    );
-
-                Vector3 launchVelocity =
-                    launchDirection * launchSpeed +
-                    Vector3.up * upwardBoost;
-
-                heldSandwich.Launch(
-                    launchVelocity,
-                    Vector3.zero
-                );
-
-                ClearHoldState();
-            }
-
+            CheckRelease();
             return;
         }
 
-        if (!assemblyManager.CanTakeSandwich)
+        CheckPickup();
+    }
+
+    private void CheckPickup()
+    {
+        if (!sandwichStation.CanTakeSandwich)
             return;
 
         float leftTrigger =
@@ -98,7 +87,7 @@ public class SandwichTriggerPickup : MonoBehaviour
             return;
 
         Vector3 sandwichPosition =
-            assemblyManager.SandwichPickupPosition;
+            sandwichStation.SandwichPickupPosition;
 
         float leftDistance =
             leftPressed
@@ -143,9 +132,11 @@ public class SandwichTriggerPickup : MonoBehaviour
         OVRInput.Controller controller)
     {
         Quaternion holdRotation =
-            Quaternion.Euler(holdLocalEulerAngles);
+            Quaternion.Euler(
+                holdLocalEulerAngles
+            );
 
-        if (!assemblyManager.TryTakeSandwich(
+        if (!sandwichStation.TryTakeSandwich(
                 controllerAnchor,
                 holdLocalPosition,
                 holdRotation,
@@ -156,15 +147,47 @@ public class SandwichTriggerPickup : MonoBehaviour
 
         heldSandwich = sandwich;
         holdingSandwich = true;
+
         activeAnchor = controllerAnchor;
         activeController = controller;
     }
 
-    private void ClearHoldState()
+    private void CheckRelease()
+    {
+        float triggerValue =
+            OVRInput.Get(
+                OVRInput.Axis1D.PrimaryIndexTrigger,
+                activeController
+            );
+
+        if (triggerValue > releaseThreshold)
+            return;
+
+        Vector3 launchDirection =
+            activeAnchor.TransformDirection(
+                localLaunchDirection.normalized
+            );
+
+        Vector3 launchVelocity =
+            launchDirection * launchSpeed +
+            Vector3.up * upwardBoost;
+
+        heldSandwich.Launch(
+            launchVelocity,
+            Vector3.zero
+        );
+
+        ClearHold();
+    }
+
+    private void ClearHold()
     {
         holdingSandwich = false;
+
         heldSandwich = null;
         activeAnchor = null;
-        activeController = OVRInput.Controller.None;
+
+        activeController =
+            OVRInput.Controller.None;
     }
 }
