@@ -60,9 +60,6 @@ public class SandwichTriggerPickup : MonoBehaviour
 
     private void CheckPickup()
     {
-        if (!sandwichStation.CanTakeSandwich)
-            return;
-
         float leftTrigger =
             OVRInput.Get(
                 OVRInput.Axis1D.PrimaryIndexTrigger,
@@ -86,48 +83,116 @@ public class SandwichTriggerPickup : MonoBehaviour
         if (!leftPressed && !rightPressed)
             return;
 
-        Vector3 sandwichPosition =
-            sandwichStation.SandwichPickupPosition;
-
-        float leftDistance =
-            leftPressed
-                ? Vector3.Distance(
-                    leftControllerAnchor.position,
-                    sandwichPosition
-                )
-                : float.PositiveInfinity;
-
-        float rightDistance =
-            rightPressed
-                ? Vector3.Distance(
-                    rightControllerAnchor.position,
-                    sandwichPosition
-                )
-                : float.PositiveInfinity;
-
-        if (leftDistance > pickupDistance &&
-            rightDistance > pickupDistance)
+        if (leftPressed)
         {
-            return;
-        }
-
-        if (leftDistance <= rightDistance)
-        {
-            BeginPickup(
+            if (TryPickupWithHand(
                 leftControllerAnchor,
-                OVRInput.Controller.LTouch
-            );
+                OVRInput.Controller.LTouch))
+            {
+                return;
+            }
         }
-        else
+
+        if (rightPressed)
         {
-            BeginPickup(
+            TryPickupWithHand(
                 rightControllerAnchor,
                 OVRInput.Controller.RTouch
             );
         }
     }
 
-    private void BeginPickup(
+    private bool TryPickupWithHand(
+        Transform controllerAnchor,
+        OVRInput.Controller controller)
+    {
+        if (controllerAnchor == null)
+            return false;
+
+        //
+        // FIRST:
+        // Check the sandwich currently being built.
+        //
+        if (sandwichStation.CanTakeSandwich)
+        {
+            float distanceToStationSandwich =
+                Vector3.Distance(
+                    controllerAnchor.position,
+                    sandwichStation.SandwichPickupPosition
+                );
+
+            if (distanceToStationSandwich <= pickupDistance)
+            {
+                BeginStationPickup(
+                    controllerAnchor,
+                    controller
+                );
+
+                return true;
+            }
+        }
+
+        //
+        // SECOND:
+        // Look for an already-launched sandwich nearby.
+        //
+        SandwichObject looseSandwich =
+            FindNearbySandwich(controllerAnchor);
+
+        if (looseSandwich != null)
+        {
+            BeginLooseSandwichPickup(
+                looseSandwich,
+                controllerAnchor,
+                controller
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private SandwichObject FindNearbySandwich(
+        Transform controllerAnchor)
+    {
+        Collider[] nearbyColliders =
+            Physics.OverlapSphere(
+                controllerAnchor.position,
+                pickupDistance
+            );
+
+        SandwichObject closestSandwich = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (Collider hit in nearbyColliders)
+        {
+            SandwichObject sandwich =
+                hit.GetComponentInParent<SandwichObject>();
+
+            if (sandwich == null ||
+                sandwich.IsHeld)
+            {
+                continue;
+            }
+
+            float distance =
+                Vector3.Distance(
+                    controllerAnchor.position,
+                    sandwich.PickupPosition
+                );
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestSandwich = sandwich;
+            }
+        }
+
+        return closestSandwich;
+    }
+
+    private void BeginStationPickup(
         Transform controllerAnchor,
         OVRInput.Controller controller)
     {
@@ -144,6 +209,32 @@ public class SandwichTriggerPickup : MonoBehaviour
         {
             return;
         }
+
+        heldSandwich = sandwich;
+        holdingSandwich = true;
+
+        activeAnchor = controllerAnchor;
+        activeController = controller;
+    }
+
+    private void BeginLooseSandwichPickup(
+        SandwichObject sandwich,
+        Transform controllerAnchor,
+        OVRInput.Controller controller)
+    {
+        if (sandwich == null)
+            return;
+
+        Quaternion holdRotation =
+            Quaternion.Euler(
+                holdLocalEulerAngles
+            );
+
+        sandwich.BeginHold(
+            controllerAnchor,
+            holdLocalPosition,
+            holdRotation
+        );
 
         heldSandwich = sandwich;
         holdingSandwich = true;

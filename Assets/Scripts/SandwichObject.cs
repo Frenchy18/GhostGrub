@@ -39,6 +39,8 @@ public class SandwichObject : MonoBehaviour
         ingredients.Count > 1 &&
         LastIngredient == IngredientType.Bread;
 
+    public bool IsHeld => isHeld;
+
     public Vector3 PickupPosition
     {
         get
