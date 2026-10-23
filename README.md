@@ -28,22 +28,26 @@ Customers enter the food truck area through a simple queue system.
 - Dynamic sandwich order display
 - A stylized spooky food truck environment
 
-
+### Images
 ![Hungry Paying Customers]
+
 <img width="792" height="713" alt="Customer" src="https://github.com/user-attachments/assets/b2ddc4d0-455c-4792-a841-b9ca5f82ce79" />
 
 
 ![Recipe Example]
+
 <img width="792" height="713" alt="RecipeText" src="https://github.com/user-attachments/assets/392eb050-f960-4b62-b619-a7731921855f" />
 
 
 ![Scripts]
+
 <img width="932" height="118" alt="Scripts" src="https://github.com/user-attachments/assets/7d8630af-040d-4886-bf87-cc6cc1a519f9" />
 
 
 ![The sandwich station]
+
 <img width="1031" height="480" alt="StationsPic" src="https://github.com/user-attachments/assets/2dc05fa9-8a71-4162-8c58-142a68b1c8f8" />
 
 
-Bonus 1: At least 15 parts (1 Sandwich contains at least 15 ingredients)
-Bonus 3: Add two assembly objects. Maybe? There are 6 different variations of sandwiches, but they are all sandwiches.
+- Bonus 1: At least 15 parts (1 Sandwich contains at least 15 ingredients)
+- Bonus 3: Add two assembly objects. Maybe? There are 6 different variations of sandwiches, but they are all sandwiches.
