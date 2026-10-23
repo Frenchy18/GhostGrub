@@ -46,3 +46,4 @@ Customers enter the food truck area through a simple queue system.
 
 
 Bonus 1: At least 15 parts (1 Sandwich contains at least 15 ingredients)
+Bonus 3: Add two assembly objects. Maybe? There are 6 different variations of sandwiches, but they are all sandwiches.
