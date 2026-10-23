@@ -60,6 +60,9 @@ public class CustomerQueueController : MonoBehaviour
     [SerializeField]
     private Transform exitPoint2;
 
+    [SerializeField, Min(0.1f)]
+    private float serviceClearanceDistance = 0.6f;
+
     [Header("Orders")]
     [SerializeField]
     private CustomerDeliveryZone deliveryZone;
@@ -431,6 +434,29 @@ public class CustomerQueueController : MonoBehaviour
             correctReactionDelay
         );
 
+        // Exit travel continues independently after the service point clears.
+        StartCoroutine(ExitCustomer(customer));
+
+        while (customer.walker != null && servicePoint != null)
+        {
+            Vector3 difference =
+                customer.walker.transform.position - servicePoint.position;
+            difference.y = 0f;
+
+            float clearance = Mathf.Max(0.1f, serviceClearanceDistance);
+            if (difference.sqrMagnitude >= clearance * clearance)
+                break;
+
+            yield return null;
+        }
+
+        queue.Remove(customer);
+        completingCustomer = false;
+        AdvanceQueue();
+    }
+
+    private IEnumerator ExitCustomer(ActiveCustomer customer)
+    {
         if (customer.walker != null)
         {
             yield return MoveAndWait(
@@ -448,25 +474,12 @@ public class CustomerQueueController : MonoBehaviour
             );
         }
 
-        if (queue.Count > 0 &&
-            queue[0] == customer)
-        {
-            queue.RemoveAt(0);
-        }
-        else
-        {
-            queue.Remove(customer);
-        }
-
         liveCustomerCount =
             Mathf.Max(
                 0,
                 liveCustomerCount - 1
             );
 
-        completingCustomer = false;
-
-        AdvanceQueue();
     }
 
     private void AdvanceQueue()
