@@ -95,10 +95,11 @@ public class SandwichStation : MonoBehaviour
             return;
         }
 
-        if (ingredient.PlacedVisualPrefab == null)
+        if (ingredient.PlacedVisualPrefab == null ||
+            ingredient.StackHeight <= 0f)
         {
             Debug.LogWarning(
-                $"{ingredient.name} has no Placed Visual Prefab."
+                $"{ingredient.name} needs a Placed Visual Prefab and positive Stack Height."
             );
 
             return;

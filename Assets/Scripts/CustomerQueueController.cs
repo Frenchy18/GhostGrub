@@ -20,6 +20,7 @@ public class CustomerQueueController : MonoBehaviour
     {
         public CustomerWalker walker;
         public RecipeDefinition recipe;
+        public bool enteringQueue;
     }
 
     [Header("Customer")]
@@ -128,7 +129,7 @@ public class CustomerQueueController : MonoBehaviour
 
         while (true)
         {
-            if (liveCustomerCount < maxCustomers)
+            if (liveCustomerCount < Mathf.Clamp(maxCustomers, 1, 3))
             {
                 SpawnCustomer();
 
@@ -186,6 +187,7 @@ public class CustomerQueueController : MonoBehaviour
             new ActiveCustomer
             {
                 walker = walker,
+                enteringQueue = true,
                 recipe =
                     recipes[
                         UnityEngine.Random.Range(
@@ -199,20 +201,12 @@ public class CustomerQueueController : MonoBehaviour
 
         liveCustomerCount++;
 
-        int slotIndex =
-            queue.Count - 1;
-
         StartCoroutine(
-            EnterQueue(
-                customer,
-                slotIndex
-            )
+            EnterQueue(customer)
         );
     }
 
-    private IEnumerator EnterQueue(
-        ActiveCustomer customer,
-        int slotIndex)
+    private IEnumerator EnterQueue(ActiveCustomer customer)
     {
         // Always enter from the rear/staging point.
         yield return MoveAndWait(
@@ -221,7 +215,7 @@ public class CustomerQueueController : MonoBehaviour
         );
 
         // Slot 2 = QueuePoint2.
-        if (slotIndex <= 2)
+        if (queue.IndexOf(customer) <= 2)
         {
             yield return MoveAndWait(
                 customer.walker,
@@ -230,7 +224,7 @@ public class CustomerQueueController : MonoBehaviour
         }
 
         // Slot 1 = QueuePoint1.
-        if (slotIndex <= 1)
+        if (queue.IndexOf(customer) <= 1)
         {
             yield return MoveAndWait(
                 customer.walker,
@@ -239,13 +233,15 @@ public class CustomerQueueController : MonoBehaviour
         }
 
         // Slot 0 = counter/service point.
-        if (slotIndex == 0)
+        if (queue.IndexOf(customer) == 0)
         {
             yield return MoveAndWait(
                 customer.walker,
                 servicePoint
             );
         }
+
+        customer.enteringQueue = false;
     }
 
     private IEnumerator MoveAndWait(
@@ -280,7 +276,8 @@ public class CustomerQueueController : MonoBehaviour
         ActiveCustomer front =
             queue[0];
 
-        if (front.walker == null ||
+        if (front.enteringQueue ||
+            front.walker == null ||
             front.walker.IsMoving)
         {
             return;
@@ -482,6 +479,7 @@ public class CustomerQueueController : MonoBehaviour
                 GetOccupiedSlot(i);
 
             if (destination != null &&
+                !queue[i].enteringQueue &&
                 queue[i].walker != null)
             {
                 queue[i].walker.MoveTo(

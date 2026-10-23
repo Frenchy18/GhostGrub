@@ -30,10 +30,7 @@ public class CustomerWalker : MonoBehaviour
     {
         target = newTarget;
 
-        if (target != null)
-        {
-            SetWalking(true);
-        }
+        SetWalking(target != null);
     }
 
     private void Update()
