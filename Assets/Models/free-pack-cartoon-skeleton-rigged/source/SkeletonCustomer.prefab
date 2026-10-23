@@ -71,7 +71,7 @@ MonoBehaviour:
   moveSpeed: 1.2
   turnSpeed: 360
   stoppingDistance: 0.03
-  animator: {fileID: 5866666021909216657, guid: 0e4f68e53c3022af2b9b2876ca0a65b3, type: 3}
+  animator: {fileID: -252901875704496821}
   walkingBoolName: Walking
 --- !u!1001 &2310911273428671767
 PrefabInstance:

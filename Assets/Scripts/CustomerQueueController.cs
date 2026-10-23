@@ -286,11 +286,12 @@ public class CustomerQueueController : MonoBehaviour
             return;
         }
 
-        float distance =
-            Vector3.Distance(
-                front.walker.transform.position,
-                servicePoint.position
-            );
+        // CustomerWalker preserves spawn height and arrives on the XZ plane.
+        Vector3 difference =
+            front.walker.transform.position - servicePoint.position;
+        difference.y = 0f;
+
+        float distance = difference.magnitude;
 
         if (distance > 0.1f)
             return;
