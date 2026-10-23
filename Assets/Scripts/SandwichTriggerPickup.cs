@@ -171,6 +171,7 @@ public class SandwichTriggerPickup : MonoBehaviour
                 hit.GetComponentInParent<SandwichObject>();
 
             if (sandwich == null ||
+                sandwich.IsOnStation ||
                 sandwich.IsHeld)
             {
                 continue;

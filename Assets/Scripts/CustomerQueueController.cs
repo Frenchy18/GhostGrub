@@ -74,6 +74,9 @@ public class CustomerQueueController : MonoBehaviour
     private TMP_Text ticketText;
 
     [SerializeField]
+    private SandwichStation sandwichStation;
+
+    [SerializeField]
     private List<RecipeDefinition> recipes =
         new List<RecipeDefinition>();
 
@@ -106,6 +109,9 @@ public class CustomerQueueController : MonoBehaviour
 
     private void Start()
     {
+        if (sandwichStation != null)
+            sandwichStation.AssemblyChanged += RefreshAssemblyTicket;
+
         if (ticketRoot != null)
         {
             ticketRoot.SetActive(false);
@@ -117,6 +123,18 @@ public class CustomerQueueController : MonoBehaviour
         }
 
         StartCoroutine(SpawnLoop());
+    }
+
+    private void OnDestroy()
+    {
+        if (sandwichStation != null)
+            sandwichStation.AssemblyChanged -= RefreshAssemblyTicket;
+    }
+
+    private void RefreshAssemblyTicket()
+    {
+        if (orderActive && queue.Count > 0)
+            UpdateTicket(queue[0].recipe);
     }
 
     private void Update()
@@ -304,6 +322,9 @@ public class CustomerQueueController : MonoBehaviour
     {
         orderActive = true;
 
+        if (sandwichStation != null)
+            sandwichStation.SetRecipe(customer.recipe.ingredients);
+
         if (deliveryZone != null)
         {
             deliveryZone.SetRequiredRecipe(
@@ -335,15 +356,21 @@ public class CustomerQueueController : MonoBehaviour
 
         builder.AppendLine(recipe.ticketName);
         builder.AppendLine();
-        builder.AppendLine("ORDER");
+        int completed = sandwichStation != null ? sandwichStation.CompletedSteps : 0;
+        builder.AppendLine($"ASSEMBLY {completed}/{recipe.ingredients.Count}");
+        bool mistake = sandwichStation != null && sandwichStation.HasAssemblyMistake;
+        builder.AppendLine(mistake
+            ? "Wrong layer - pick up, discard and rebuild."
+            : completed >= recipe.ingredients.Count
+            ? "COMPLETE - Grab and deliver!"
+            : $"NEXT: Grab {recipe.ingredients[completed]}");
+        builder.AppendLine("Pick up at any time to deliver or discard.");
         builder.AppendLine();
 
-        foreach (IngredientType ingredient
-                 in recipe.ingredients)
+        for (int i = 0; i < recipe.ingredients.Count; i++)
         {
-            builder.AppendLine(
-                ingredient.ToString()
-            );
+            string marker = i < completed ? "[OK]" : i == completed ? ">" : "";
+            builder.AppendLine($"{marker} {i + 1}. {recipe.ingredients[i]}");
         }
 
         ticketText.text =
@@ -361,6 +388,9 @@ public class CustomerQueueController : MonoBehaviour
 
         orderActive = false;
         completingCustomer = true;
+
+        if (sandwichStation != null)
+            sandwichStation.SetRecipe(null);
 
         if (deliveryZone != null)
         {

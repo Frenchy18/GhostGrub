@@ -40,6 +40,7 @@ public class SandwichObject : MonoBehaviour
         LastIngredient == IngredientType.Bread;
 
     public bool IsHeld => isHeld;
+    public bool IsOnStation { get; private set; }
 
     public Vector3 PickupPosition
     {
@@ -80,6 +81,7 @@ public class SandwichObject : MonoBehaviour
 
     public void PrepareForStation()
     {
+        IsOnStation = true;
         isHeld = false;
         holdAnchor = null;
 
@@ -175,6 +177,7 @@ public class SandwichObject : MonoBehaviour
         if (controllerAnchor == null)
             return;
 
+        IsOnStation = false;
         holdAnchor = controllerAnchor;
         holdLocalPosition = localPosition;
         holdLocalRotation = localRotation;
