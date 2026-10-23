@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 public class CustomerDeliveryZone : MonoBehaviour
 {
-    [Header("Required Recipe")]
+    [Header("Current Recipe")]
     [SerializeField]
     private List<IngredientType> requiredIngredients =
         new List<IngredientType>();
@@ -13,15 +13,37 @@ public class CustomerDeliveryZone : MonoBehaviour
     [SerializeField]
     private bool destroySandwichAfterDelivery = true;
 
-    [Header("Reactions")]
+    [SerializeField]
+    private bool acceptingOrders = false;
+
+    [Header("Events")]
     [SerializeField]
     private UnityEvent onCorrectOrder;
 
     [SerializeField]
     private UnityEvent onWrongOrder;
 
+    public void SetRequiredRecipe(
+        List<IngredientType> recipe)
+    {
+        requiredIngredients.Clear();
+
+        if (recipe != null)
+        {
+            requiredIngredients.AddRange(recipe);
+        }
+    }
+
+    public void SetAcceptingOrders(bool accepting)
+    {
+        acceptingOrders = accepting;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
+        if (!acceptingOrders)
+            return;
+
         SandwichObject sandwich =
             other.GetComponentInParent<SandwichObject>();
 
